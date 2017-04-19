@@ -12,12 +12,25 @@
                    (swap! game-map assoc [x y] "."))))
     @game-map))
 
-(defn draw-map [display game-map]
-  (print game-map)
+(defn place-boxes [game-map]
+  (loop [i 10
+         box-positions []
+         free-cells (keys game-map)]
+    (if (> i 0)
+      (let [chosen (js/Math.floor (* (-> js/ROT .-RNG (.getUniform)) (count free-cells)))]
+        (recur
+          (dec i)
+          (conj box-positions (nth free-cells chosen))
+          (remove #{chosen} free-cells)))
+      box-positions)))
+
+(defn draw-map [display game-map boxes]
   (doall
     (for [[[x y] tile] game-map]
-      (do (print x y (get game-map [x y]))
-          (.draw display x y (get game-map [x y]))))))
+      (.draw display x y
+             (if (contains? (set boxes) [x y])
+               "*"
+               (get game-map [x y]))))))
 
 ;; -------------------------
 ;; Views
@@ -49,10 +62,11 @@
   ;(reagent/render [current-page] (.getElementById js/document "app"))
   (let [app-element (.getElementById js/document "app")
         display (js/ROT.Display.)
-        game-map (generate-map)]
+        game-map (generate-map)
+        boxes (place-boxes game-map)]
     (set! (.-innerHTML app-element) "")
     (.appendChild app-element (.getContainer display))
-    (draw-map display game-map)))
+    (draw-map display game-map boxes)))
 
 (defn init! []
   (accountant/configure-navigation!
