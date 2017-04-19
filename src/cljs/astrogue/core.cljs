@@ -4,6 +4,21 @@
               [secretary.core :as secretary :include-macros true]
               [accountant.core :as accountant]))
 
+(defn generate-map []
+  (let [d (js/ROT.Map.Digger.)
+        game-map (atom {})]
+    (.create d (fn [x y tile]
+                 (if (= tile 0)
+                   (swap! game-map assoc [x y] "."))))
+    @game-map))
+
+(defn draw-map [display game-map]
+  (print game-map)
+  (doall
+    (for [[[x y] tile] game-map]
+      (do (print x y (get game-map [x y]))
+          (.draw display x y (get game-map [x y]))))))
+
 ;; -------------------------
 ;; Views
 
@@ -32,10 +47,12 @@
 
 (defn mount-root []
   ;(reagent/render [current-page] (.getElementById js/document "app"))
-  (let [d (js/ROT.Display.)]
-    (.appendChild (.getElementById js/document "app") (.getContainer d))
-    )
-  )
+  (let [app-element (.getElementById js/document "app")
+        display (js/ROT.Display.)
+        game-map (generate-map)]
+    (set! (.-innerHTML app-element) "")
+    (.appendChild app-element (.getContainer display))
+    (draw-map display game-map)))
 
 (defn init! []
   (accountant/configure-navigation!
