@@ -42,8 +42,9 @@
   (let [game-map (generate-map)
         free-cells (keys game-map)
         [boxes free-cells] (place-items free-cells 10)
-        [[player] free-cells] (place-items free-cells 1)]
-    [game-map boxes player]))
+        [[player] free-cells] (place-items free-cells 1)
+        [[npc] free-cells] (place-items free-cells 1)]
+    [game-map boxes player npc]))
 
 (defn update-player-position! [game-state key-code game-map]
   (let [player (@game-state :player)
@@ -62,12 +63,29 @@
     (if (contains? (set (keys game-map)) (vec player-new))
       (swap! game-state assoc :player player-new))))
 
-(defn draw-map [display game-map player boxes]
+(defn update-npc-position! [game-state game-map]
+  (let [player (@game-state :player)
+        npc (@game-state :npc)
+        map-tiles (set (keys game-map))
+        a* (js/ROT.Path.AStar. (first player) (last player)
+                               (fn [x y] (contains? map-tiles [x y]))
+                               {:topology 4})
+        path (atom [])]
+    (.compute a* (first npc) (last npc) (fn [x y] (swap! path conj [x y])))
+    (swap! path subvec 1)
+    (if (= (count @path) 1)
+      "caught"
+      (do
+        (swap! game-state assoc :npc (first @path))
+        nil))))
+
+(defn draw-map [display game-map player npc boxes]
   (doall
     (for [[[x y] tile] game-map]
       (.draw display x y
              (cond
                (= [x y] player) "@"
+               (= [x y] npc) "X"
                (contains? (set boxes) [x y]) "*"
                true (get game-map [x y]))))))
 
@@ -75,33 +93,35 @@
   (let [my-instance @instance
         key-chan (make-key-chan)]
     (go
-      (loop [key-event nil won false]
+      (loop [key-event nil
+             win-state nil]
         (when key-event
           (let [k (.-keyCode key-event)
                 player (@game-state :player)]
             (print "key" k)
             (update-player-position! game-state k game-map)
-            (when (contains? {32 13} k)
-              (if (contains? (set boxes) player)
-                (if (= player (first boxes))
-                  (do
-                    (js/alert "You found the mushroom. You win.")
-                    (recur nil true))
-                  (js/alert "Sorry, no mushroom here."))
-                (js/alert "No box here.")))))
-        (draw-map display game-map (@game-state :player) boxes)
-        (if (and (= my-instance @instance) (not won))
-          (recur (<! key-chan) false)
+            (when (and (contains? {32 13} k) (contains? (set boxes) player))
+              (if (= player (first boxes))
+                (recur nil "won")
+                (js/alert "Sorry, no mushroom here."))))
+          (let [npc-win-state (update-npc-position! game-state game-map)]
+            (if npc-win-state
+              (recur nil npc-win-state))))
+        (draw-map display game-map (@game-state :player) (@game-state :npc) boxes)
+        (if (and (= my-instance @instance) (nil? win-state))
+          (recur (<! key-chan) nil)
           (do
             (print "Exiting loop")
-            won))))))
+            win-state))))))
 
 (defn wait-for-win! [display game-map boxes game-state]
   (let [my-instance @instance]
     (go
-      (loop [won false]
-        (if won
-          (print "win!")
+      (loop [win-state nil]
+        (if win-state
+          (cond
+            (= win-state "caught") (js/alert "You were caught by the X.")
+            (= win-state "won") (js/alert "You found the mushroom. You win."))
           (if (= my-instance @instance)
             (recur (<! (input-loop! display game-map boxes game-state)))))))))
 
@@ -137,8 +157,9 @@
   (let [app-element (.getElementById js/document "app")
         game-state (atom {})
         display (js/ROT.Display.)
-        [game-map boxes player] (build-map)]
+        [game-map boxes player npc] (build-map)]
     (swap! game-state assoc :player player)
+    (swap! game-state assoc :npc npc)
     (set! (.-innerHTML app-element) "")
     (.appendChild app-element (.getContainer display))
     (wait-for-win! display game-map boxes game-state)))
