@@ -45,6 +45,24 @@
         [[player] free-cells] (place-items free-cells 1)]
     [game-map boxes player]))
 
+(defn update-player-position! [game-state key-code game-map]
+  (let [player (@game-state :player)
+        key-map {38 0
+                 33 1
+                 39 2
+                 34 3
+                 40 4
+                 35 5
+                 37 6
+                 36 7}
+        dirs (js->clj (aget (.-DIRS js/ROT) 8))
+        key-dir (get key-map key-code)
+        player-diff (get dirs key-dir)
+        player-new [(+ (first player) (first player-diff)) (+ (last player) (last player-diff))]]
+    (print player-new)
+    (if (contains? (set (keys game-map)) (vec player-new))
+      (swap! game-state assoc :player player-new))))
+
 (defn draw-map [display game-map player boxes]
   (doall
     (for [[[x y] tile] game-map]
@@ -59,9 +77,10 @@
         key-chan (make-key-chan)]
     (go
       (loop [key-event nil]
-        (draw-map display game-map (@game-state :player) boxes)
         (when key-event
-          (print (.-keyCode key-event)))
+          (print (.-keyCode key-event))
+          (update-player-position! game-state (.-keyCode key-event) game-map))
+        (draw-map display game-map (@game-state :player) boxes)
         (if (= my-instance @instance)
           (recur (<! key-chan))
           (print "Exiting loop"))))))
