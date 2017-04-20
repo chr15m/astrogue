@@ -59,7 +59,6 @@
         key-dir (get key-map key-code)
         player-diff (get dirs key-dir)
         player-new [(+ (first player) (first player-diff)) (+ (last player) (last player-diff))]]
-    (print player-new)
     (if (contains? (set (keys game-map)) (vec player-new))
       (swap! game-state assoc :player player-new))))
 
@@ -76,14 +75,26 @@
   (let [my-instance @instance
         key-chan (make-key-chan)]
     (go
-      (loop [key-event nil]
+      (loop [key-event nil won false]
         (when key-event
-          (print (.-keyCode key-event))
-          (update-player-position! game-state (.-keyCode key-event) game-map))
+          (let [k (.-keyCode key-event)
+                player (@game-state :player)]
+            (print "key" k)
+            (update-player-position! game-state k game-map)
+            (when (contains? {32 13} k)
+              (if (contains? (set boxes) player)
+                (if (= player (first boxes))
+                  (do
+                    (js/alert "You found the mushroom. You win.")
+                    (recur nil true))
+                  (js/alert "Sorry, no mushroom here."))
+                (js/alert "No box here.")))))
         (draw-map display game-map (@game-state :player) boxes)
-        (if (= my-instance @instance)
-          (recur (<! key-chan))
-          (print "Exiting loop"))))))
+        (if (and (= my-instance @instance) (not won))
+          (recur (<! key-chan) false)
+          (do
+            (print "Exiting loop")
+            won))))))
 
 ;; -------------------------
 ;; Views
@@ -121,7 +132,8 @@
     (swap! game-state assoc :player player)
     (set! (.-innerHTML app-element) "")
     (.appendChild app-element (.getContainer display))
-    (input-loop! display game-map boxes game-state)))
+    (go
+      (print "win:" (<! (input-loop! display game-map boxes game-state))))))
 
 (defn init! []
   (accountant/configure-navigation!
