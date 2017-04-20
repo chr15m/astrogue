@@ -1,3 +1,3 @@
 Astronomical roguelike.
 
-![Screenshot](./resources/screenshots/screenshot-1.png)
+![Screenshot](./resources/screenshots/screenshot-2.png)
