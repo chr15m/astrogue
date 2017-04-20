@@ -103,7 +103,7 @@
             (when (and (contains? {32 13} k) (contains? (set boxes) player))
               (if (= player (first boxes))
                 (recur nil "won")
-                (js/alert "Sorry, no mushroom here."))))
+                (js/alert "Empty box."))))
           (let [npc-win-state (update-npc-position! game-state game-map)]
             (if npc-win-state
               (recur nil npc-win-state))))
@@ -111,7 +111,7 @@
         (if (and (= my-instance @instance) (nil? win-state))
           (recur (<! key-chan) nil)
           (do
-            (print "Exiting loop")
+            (print "Exiting loop.")
             win-state))))))
 
 (defn wait-for-win! [display game-map boxes game-state]
@@ -120,8 +120,8 @@
       (loop [win-state nil]
         (if win-state
           (cond
-            (= win-state "caught") (js/alert "You were caught by the X.")
-            (= win-state "won") (js/alert "You found the mushroom. You win."))
+            (= win-state "caught") (js/alert "You were caught.")
+            (= win-state "won") (js/alert "You found the prize. You win."))
           (if (= my-instance @instance)
             (recur (<! (input-loop! display game-map boxes game-state)))))))))
 
