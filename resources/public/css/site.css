@@ -26,6 +26,7 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  border-radius: 3px;
 }
 
 svg#canvas {
@@ -33,4 +34,25 @@ svg#canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+}
+
+div#loader {
+  position: fixed;
+  width: 128px;
+  height: 128px;
+  background-color: #76C897;
+  border-radius: 32px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-64px, -64px);
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
+    0%   {
+        transform: translate(-64px, -64px) rotate(0deg);
+    }
+    100% {
+        transform: translate(-64px, -64px) rotate(360deg);
+    }
 }
