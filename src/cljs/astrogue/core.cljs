@@ -96,6 +96,15 @@
             (print "Exiting loop")
             won))))))
 
+(defn wait-for-win! [display game-map boxes game-state]
+  (let [my-instance @instance]
+    (go
+      (loop [won false]
+        (if won
+          (print "win!")
+          (if (= my-instance @instance)
+            (recur (<! (input-loop! display game-map boxes game-state)))))))))
+
 ;; -------------------------
 ;; Views
 
@@ -132,8 +141,7 @@
     (swap! game-state assoc :player player)
     (set! (.-innerHTML app-element) "")
     (.appendChild app-element (.getContainer display))
-    (go
-      (print "win:" (<! (input-loop! display game-map boxes game-state))))))
+    (wait-for-win! display game-map boxes game-state)))
 
 (defn init! []
   (accountant/configure-navigation!
