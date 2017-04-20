@@ -23,7 +23,7 @@
         game-map (atom {})]
     (.create d (fn [x y tile]
                  (if (= tile 0)
-                   (swap! game-map assoc [x y] "."))))
+                   (swap! game-map assoc [x y] true))))
     @game-map))
 
 (defn place-items [free-cells c]
@@ -84,10 +84,10 @@
     (for [[[x y] tile] game-map]
       (.draw display x y
              (cond
-               (= [x y] player) "@"
-               (= [x y] npc) "X"
-               (contains? (set boxes) [x y]) "*"
-               true (get game-map [x y]))))))
+               (= [x y] player) "●"
+               (= [x y] npc) "▲"
+               (contains? (set boxes) [x y]) "▢"
+               (get game-map [x y]) "·")))))
 
 (defn input-loop! [display game-map boxes game-state]
   (let [my-instance @instance
