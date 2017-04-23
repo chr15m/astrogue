@@ -17,9 +17,12 @@
                    :viewBox (str "0 0 " (first dimensions) " " (last dimensions))}
       (doall
         (for [[[x y] tile] game-map]
-          (cond
-            (= [x y] player) [:rect {:key [x y] :x x :y y :width 0.9 :height 0.9 :fill "blue"}]
-            (= [x y] npc) [:rect {:key [x y] :x x :y y :width 0.9 :height 0.9 :fill "red"}]
-            (contains? (set boxes) [x y]) [:rect {:key [x y] :x x :y y :width 0.9 :height 0.9 :fill "#333"}]
-            (get game-map [x y]) [:rect {:key [x y] :x x :y y :width 0.9 :height 0.9 :fill "#76C897"}])))]]))
+          [:rect {:key [x y]
+                  :x x :y y
+                  :width 0.9 :height 0.9
+                  :fill (cond
+                          (= [x y] player) "blue"
+                          (= [x y] npc) "red"
+                          (contains? (set boxes) [x y]) "#333"
+                          (get game-map [x y]) "#76C897")}]))]]))
 
