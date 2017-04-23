@@ -17,7 +17,7 @@
      [:svg#canvas {:width (get-in @db [:window 0])
                    :height (get-in @db [:window 1])
                    :viewBox (str (* (/ w 2) -1) " " (* (/ h 2) -1) " " w " " h)}
-      [:g
+      [:g {:transform "scale(2)"}
        (doall
          (for [[[x y] tile] game-map]
            [:rect {:key [x y]
