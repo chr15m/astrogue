@@ -6,6 +6,16 @@
 
 (defonce instance (atom 0))
 
+(def keys-directional {38 0
+                       33 1
+                       39 2
+                       34 3
+                       40 4
+                       35 5
+                       37 6
+                       36 7})
+(def keys-action #{32 13})
+
 (defn <<< [f & args]
   (let [c (chan)] ()
     (apply f (concat args [(fn
@@ -46,16 +56,8 @@
 
 (defn update-player-position! [game-state key-code game-map]
   (let [player (@game-state :player)
-        key-map {38 0
-                 33 1
-                 39 2
-                 34 3
-                 40 4
-                 35 5
-                 37 6
-                 36 7}
         dirs (js->clj (aget (.-DIRS js/ROT) 8))
-        key-dir (get key-map key-code)
+        key-dir (get keys-directional key-code)
         player-diff (get dirs key-dir)
         player-new [(+ (first player) (first player-diff)) (+ (last player) (last player-diff))]]
     (if (contains? (set (keys game-map)) (vec player-new))
@@ -98,13 +100,14 @@
                 player (@game-state :player)]
             (print "key" k)
             (update-player-position! game-state k game-map)
-            (when (and (contains? {32 13} k) (contains? (set boxes) player))
+            (when (and (contains? keys-action k) (contains? (set boxes) player))
               (if (= player (first boxes))
                 (recur nil "won")
-                (js/alert "Empty box."))))
-          (let [npc-win-state (update-npc-position! game-state game-map)]
-            (if npc-win-state
-              (recur nil npc-win-state))))
+                (js/alert "Empty box.")))
+            (if (contains? (set (concat keys-action (keys keys-directional))) k)
+              (let [npc-win-state (update-npc-position! game-state game-map)]
+                (if npc-win-state
+                  (recur nil npc-win-state))))))
         (draw-map display game-map (@game-state :player) (@game-state :npc) boxes)
         (if (and (= my-instance @instance) (nil? win-state))
           (recur (<! key-chan) nil)
