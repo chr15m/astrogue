@@ -10,19 +10,22 @@
 
 (defn component-renderer [dimensions db game-map boxes]
   (let [player (@db :player)
-        npc (@db :npc)]
+        npc (@db :npc)
+        w (first dimensions)
+        h (last dimensions)]
     [:div
      [:svg#canvas {:width (get-in @db [:window 0])
                    :height (get-in @db [:window 1])
-                   :viewBox (str "0 0 " (first dimensions) " " (last dimensions))}
-      (doall
-        (for [[[x y] tile] game-map]
-          [:rect {:key [x y]
-                  :x x :y y
-                  :width 0.9 :height 0.9
-                  :fill (cond
-                          (= [x y] player) "blue"
-                          (= [x y] npc) "red"
-                          (contains? (set boxes) [x y]) "#333"
-                          (get game-map [x y]) "#76C897")}]))]]))
+                   :viewBox (str (* (/ w 2) -1) " " (* (/ h 2) -1) " " w " " h)}
+      [:g
+       (doall
+         (for [[[x y] tile] game-map]
+           [:rect {:key [x y]
+                   :x (- x (first player)) :y (- y (last player))
+                   :width 0.9 :height 0.9
+                   :fill (cond
+                           (= [x y] player) "blue"
+                           (= [x y] npc) "red"
+                           (contains? (set boxes) [x y]) "#333"
+                           (get game-map [x y]) "#76C897")}]))]]]))
 
