@@ -64,20 +64,22 @@
       (swap! game-state assoc :player player-new))))
 
 (defn update-npc-position! [game-state game-map]
-  (let [player (@game-state :player)
+  (let [frame (@game-state :frame)
+        player (@game-state :player)
         npc (@game-state :npc)
         map-tiles (set (keys game-map))
         a* (js/ROT.Path.AStar. (first player) (last player)
                                (fn [x y] (contains? map-tiles [x y]))
                                {:topology 4})
         path (atom [])]
-    (.compute a* (first npc) (last npc) (fn [x y] (swap! path conj [x y])))
-    (swap! path subvec 1)
-    (if (= (count @path) 1)
-      "caught"
-      (do
-        (swap! game-state assoc :npc (first @path))
-        nil))))
+    (when (= (mod frame 2) 0)
+      (.compute a* (first npc) (last npc) (fn [x y] (swap! path conj [x y])))
+      (swap! path subvec 1)
+      (if (= (count @path) 1)
+        "caught"
+        (do
+          (swap! game-state assoc :npc (first @path))
+          nil)))))
 
 (defn draw-map [display game-map player npc boxes]
   (doall
@@ -95,6 +97,7 @@
     (go
       (loop [key-event nil
              win-state nil]
+        (swap! game-state update-in [:frame] inc)
         (when key-event
           (let [k (.-keyCode key-event)
                 player (@game-state :player)]
