@@ -15,8 +15,8 @@
         w (first dimensions)
         h (last dimensions)]
     [:div
-     [:svg#canvas {:width (get-in @db [:window 0])
-                   :height (get-in @db [:window 1])
+     [:svg#canvas {:width (.-innerWidth js/window)
+                   :height (.-innerHeight js/window)
                    :viewBox (str (* (/ w 2) -1) " " (* (/ h 2) -1) " " w " " h)}
       [:g {:transform "scale(4)"}
        (doall
