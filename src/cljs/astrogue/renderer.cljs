@@ -45,15 +45,24 @@
       [:g {:transform "scale(4)"}
        (doall
          (for [[[x y] tile] game-map]
-           [:rect {:key [x y]
-                   :x (- x (first player) 0.45) :y (* (- y (last player) 0.45) ratio)
-                   :width 0.9 :height (* 0.9 ratio)
-                   :rx 0.09 :ry 0.06
-                   :fill (cond
-                           ;(= [x y] player) "blue"
-                           ;(= [x y] npc) "red"
-                           ;(contains? (set boxes) [x y]) "#333"
-                           (get game-map [x y]) "#76C897")}]))
+           [:g
+            [:rect {:key [x y]
+                    :x (- x (first player) 0.45) :y (* (- y (last player) 0.45) ratio)
+                    :width 0.9 :height (* 0.9 ratio)
+                    :rx 0.09 :ry 0.06
+                    :fill (cond
+                            ;(= [x y] player) "blue"
+                            ;(= [x y] npc) "red"
+                            ;(contains? (set boxes) [x y]) "#333"
+                            (get game-map [x y]) "#76C897")}]
+            (if (or (= [x y] player)
+                    (= [x y] npc)
+                    (contains? (set boxes) [x y]))
+              [:rect {:key ["shadow" [x y]]
+                        :x (- x (first player) 0.35) :y (* (- y (last player) 0.2) ratio)
+                        :width 0.6 :height 0.4
+                        :rx 0.6 :ry 0.4
+                        :fill "rgba(0,0,0,0.3)"}])]))
        (doall
          (for [[[x y] tile] game-map]
            (cond (= [x y] npc) (svg-npc (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 1.25))
