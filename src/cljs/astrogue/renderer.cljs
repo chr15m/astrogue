@@ -55,10 +55,10 @@
                     (= [x y] npc)
                     (contains? (set boxes) [x y]))
               [:rect {:key ["shadow" [x y]]
-                        :x (- x (first player) 0.35) :y (* (- y (last player) 0.2) ratio)
-                        :width 0.6 :height 0.4
-                        :rx 0.6 :ry 0.4
-                        :fill "rgba(0,0,0,0.3)"}])]))
+                      :x (- x (first player) 0.35) :y (* (- y (last player) 0.2) ratio)
+                      :width 0.6 :height 0.4
+                      :rx 0.6 :ry 0.4
+                      :fill "rgba(100,100,100,0.2)"}])]))
        (doall
          (for [x (range w) y (range h)]
            (cond (= [x y] npc) (svg-npc (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 1.25 (* (js/Math.sin (* @clock 0.007)) 0.03)))
