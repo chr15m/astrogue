@@ -32,7 +32,7 @@
   (reset! c
           (rectangle-in-rectangle dimensions [(.-innerWidth js/window) (.-innerHeight js/window)])))
 
-(defn component-renderer [dimensions db game-map boxes]
+(defn component-renderer [dimensions db game-map boxes clock]
   (let [player (@db :player)
         npc (@db :npc)
         ratio (/ 2 3)
@@ -64,11 +64,11 @@
                         :fill "rgba(0,0,0,0.3)"}])]))
        (doall
          (for [[[x y] tile] game-map]
-           (cond (= [x y] npc) (svg-npc (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 1.25))
+           (cond (= [x y] npc) (svg-npc (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 1.25 (* (js/Math.sin (* @clock 0.007)) 0.03)))
                  (contains? (set boxes) [x y]) (svg-mushroom (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 0.56)))))
-       [:svg#player
-        {:width 1 :height 1 :viewBox "0 0 48 48" :x -0.5 :y -1.25}
-        [:path {:transform "translate(2,0)" :d "m 44.571428,17.285715 a 20.857143,15.285714 0 1 1 -41.7142865,0 20.857143,15.285714 0 1 1 41.7142865,0 z" :fill "white"}]
-        [:path {:transform "translate(2.5714286,0.8571429)" :d "m 33.428573,37.285713 a 10.142858,8.1428566 0 1 1 -20.285715,0 10.142858,8.1428566 0 1 1 20.285715,0 z" :fill "white"}]
-        [:path {:d shape-player}]]]]]))
+       [:svg#player {:key "player" :width 1 :height 1 :viewBox "0 0 48 48" :x -0.55 :y (- -1.25 (* (js/Math.sin (* @clock 0.005)) 0.03))}
+        [:g {}
+         [:path {:transform "translate(2,0)" :d "m 44.571428,17.285715 a 20.857143,15.285714 0 1 1 -41.7142865,0 20.857143,15.285714 0 1 1 41.7142865,0 z" :fill "white"}]
+         [:path {:transform "translate(2.5714286,0.8571429)" :d "m 33.428573,37.285713 a 10.142858,8.1428566 0 1 1 -20.285715,0 10.142858,8.1428566 0 1 1 20.285715,0 z" :fill "white"}]
+         [:path {:d shape-player}]]]]]]))
 
