@@ -44,16 +44,13 @@
                    :viewBox (str (* (/ w 2) -1) " " (* (/ h 2) -1) " " w " " h)}
       [:g {:transform "scale(4)"}
        (doall
-         (for [[[x y] tile] game-map]
+         (for [x (range w) y (range h)]
            [:g {:key ["floor" [x y]]}
-            [:rect {:x (- x (first player) 0.45) :y (* (- y (last player) 0.45) ratio)
-                    :width 0.9 :height (* 0.9 ratio)
-                    :rx 0.09 :ry 0.06
-                    :fill (cond
-                            ;(= [x y] player) "blue"
-                            ;(= [x y] npc) "red"
-                            ;(contains? (set boxes) [x y]) "#333"
-                            (get game-map [x y]) "#76C897")}]
+            (when (get game-map [x y])
+              [:rect {:x (- x (first player) 0.45) :y (* (- y (last player) 0.45) ratio)
+                      :width 0.9 :height (* 0.9 ratio)
+                      :rx 0.09 :ry 0.06
+                      :fill (str "rgba(118, 200, 151," 0.5 ")")}])
             (if (or (= [x y] player)
                     (= [x y] npc)
                     (contains? (set boxes) [x y]))
@@ -63,7 +60,7 @@
                         :rx 0.6 :ry 0.4
                         :fill "rgba(0,0,0,0.3)"}])]))
        (doall
-         (for [[[x y] tile] game-map]
+         (for [x (range w) y (range h)]
            (cond (= [x y] npc) (svg-npc (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 1.25 (* (js/Math.sin (* @clock 0.007)) 0.03)))
                  (contains? (set boxes) [x y]) (svg-mushroom (- x (first player) 0.45) (- (* (- y (last player) 0.45) ratio) 0.56)))))
        [:svg#player {:key "player" :width 1 :height 1 :viewBox "0 0 48 48" :x -0.55 :y (- -1.25 (* (js/Math.sin (* @clock 0.005)) 0.03))}
