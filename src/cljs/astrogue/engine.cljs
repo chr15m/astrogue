@@ -14,6 +14,7 @@
                        35 5
                        37 6
                        36 7})
+
 (def keys-action #{32 13})
 
 (defn <<< [f & args]
@@ -106,7 +107,7 @@
             (when (and (contains? keys-action k) (contains? (set boxes) player))
               (if (= player (first boxes))
                 (recur nil "won")
-                (js/alert "Empty box.")))
+                (js/alert "Not the mushroom you are looking for.")))
             (if (contains? (set (concat keys-action (keys keys-directional))) k)
               (let [npc-win-state (update-npc-position! game-state game-map)]
                 (if npc-win-state
@@ -126,7 +127,7 @@
         (if win-state
           (cond
             (= win-state "caught") (js/alert "You were caught.")
-            (= win-state "won") (js/alert "You found the prize. You win."))
+            (= win-state "won") (js/alert "You found the best mushroom. You win."))
           (if (= my-instance @instance)
             (recur (<! (input-loop! display game-map boxes game-state)))))))))
 
