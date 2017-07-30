@@ -1,7 +1,5 @@
-(ns astrogue.engine
-  (:require [reagent.core :as reagent :refer [atom]]
-            [reagent.session :as session]
-            [cljs.core.async :refer [chan put! close!]])
+(ns ld39.engine
+  (:require [cljs.core.async :refer [chan put! close!]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
 (defonce instance (atom 0))
