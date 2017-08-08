@@ -18,23 +18,24 @@
      [:pre#canvas
       (doall
         (for [y (range h)]
-          [:p
+          [:p {:key y}
            (for [x (range w)]
-             (do
+             [:span.floor {:key [x y]}
                (cond
-                 ; player
-                 (= [x y] player)
-                 [:span "@"]
-
-                 ; entities
-                 (= [x y] npc) [:span "O"]
-                 (contains? (set boxes) [x y]) [:span "X"]
-
                  ; grass
                  (get game-map [x y])
-                 [:span "-"]
+                 "▒"
 
                  ; empty map
                  (nil? (get game-map [x y]))
-                 [:span " "])))]))]]))
+                 " ")
+              (let [overlay (cond
+                              ; player
+                              (= [x y] player)
+                              "●"
+
+                              ; entities
+                              (= [x y] npc) "▼"
+                              (contains? (set boxes) [x y]) "■")]
+                (if overlay [:span.overlay overlay]))])]))]]))
 
