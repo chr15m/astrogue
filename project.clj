@@ -6,9 +6,10 @@
 
   :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
                  [org.clojure/clojurescript "1.9.854" :scope "provided"]
-                 ;[cljsjs/nacl-fast "1.0.0-rc.1-0"]
+                 [org.clojure/core.async "0.3.443"]
                  ;[cljsjs/rot "0.6.0-0"]
-                 [reagent "0.7.0"]]
+                 [reagent "0.7.0"]
+                 [cljsjs/nacl-fast "1.0.0-rc.1-0"]]
 
   :plugins [[lein-cljsbuild "1.1.5"]
             [lein-figwheel "0.5.11"]]
