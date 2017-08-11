@@ -1,4 +1,4 @@
-(ns ld39.engine
+(ns astrogue.engine
   (:require [cljs.core.async :refer [chan put! close!]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 

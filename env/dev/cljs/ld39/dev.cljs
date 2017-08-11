@@ -1,6 +1,6 @@
-(ns ^:figwheel-no-load ld39.dev
+(ns ^:figwheel-no-load astrogue.dev
   (:require
-    [ld39.core :as core]
+    [astrogue.core :as core]
     [devtools.core :as devtools]))
 
 

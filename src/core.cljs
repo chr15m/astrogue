@@ -1,7 +1,7 @@
-(ns ld39.core
+(ns astrogue.core
     (:require [reagent.core :as reagent]
-              [ld39.engine :refer [build-map wait-for-win!]]
-              [ld39.renderer :refer [component-renderer resize-screen!]]))
+              [astrogue.engine :refer [build-map wait-for-win!]]
+              [astrogue.renderer :refer [component-renderer resize-screen!]]))
 
 (defn mount-root []
   (let [app-element (.getElementById js/document "app")

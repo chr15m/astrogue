@@ -1,6 +1,6 @@
-(ns ld39.prod
+(ns astrogue.prod
   (:require
-    [ld39.core :as core]))
+    [astrogue.core :as core]))
 
 ;;ignore println statements in prod
 (set! *print-fn* (fn [& _]))

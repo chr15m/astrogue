@@ -1,4 +1,4 @@
-(ns ld39.renderer)
+(ns astrogue.renderer)
 
 (defn rectangle-in-rectangle [r1 r2]
   (let [scale (js/Math.min (/ (first r2) (first r1)) (/ (last r2) (last r1)))]
