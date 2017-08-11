@@ -110,7 +110,7 @@
               (let [npc-win-state (update-npc-position! game-state game-map)]
                 (if npc-win-state
                   (recur nil npc-win-state))))))
-        (draw-map display game-map (@game-state :player) (@game-state :npc) boxes)
+        ;(draw-map display game-map (@game-state :player) (@game-state :npc) boxes)
         (if (and (= my-instance @instance) (nil? win-state))
           (recur (<! key-chan) nil)
           (do
