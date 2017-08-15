@@ -25,6 +25,11 @@
 (defn make-key-chan []
   (<<< #(.addEventListener js/window "keydown" %)))
 
+(defn make-game-state []
+  {:window [0 0]
+   :messages []
+   :player nil})
+
 (defn generate-map []
   (let [d (js/ROT.Map.Digger.)
         game-map (atom {})]
@@ -90,7 +95,7 @@
                (contains? (set boxes) [x y]) "▢"
                (get game-map [x y]) "·")))))
 
-(defn input-loop! [display game-map boxes game-state]
+(defn input-loop! [game-map boxes game-state]
   (let [my-instance @instance
         key-chan (make-key-chan)]
     (go
@@ -110,14 +115,13 @@
               (let [npc-win-state (update-npc-position! game-state game-map)]
                 (if npc-win-state
                   (recur nil npc-win-state))))))
-        ;(draw-map display game-map (@game-state :player) (@game-state :npc) boxes)
         (if (and (= my-instance @instance) (nil? win-state))
           (recur (<! key-chan) nil)
           (do
             (print "Exiting loop.")
             win-state))))))
 
-(defn wait-for-win! [display game-map boxes game-state]
+(defn wait-for-win! [game-map boxes game-state]
   (swap! instance inc)
   (let [my-instance @instance]
     (go
@@ -127,5 +131,5 @@
             (= win-state "caught") (js/alert "You were caught.")
             (= win-state "won") (js/alert "You found the best mushroom. You win."))
           (if (= my-instance @instance)
-            (recur (<! (input-loop! display game-map boxes game-state)))))))))
+            (recur (<! (input-loop! game-map boxes game-state)))))))))
 

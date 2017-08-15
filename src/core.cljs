@@ -1,67 +1,64 @@
 (ns astrogue.core
   (:require [reagent.core :as reagent]
             [clojure.core.async :refer [<!]]
-            [astrogue.engine :refer [build-map wait-for-win!]]
+            [alandipert.storage-atom :refer [local-storage]]
+            [astrogue.engine :refer [build-map make-game-state wait-for-win!]]
             [astrogue.renderer :refer [component-renderer resize-screen!]]
-            [astrogue.yaba :as yaba]
-            [astrogue.multiplayer :as multiplayer])
+            [astrogue.multiplayer :as multiplayer]
+            [astrogue.utils :refer [generate-dungeon-name dungeon-name-to-seed]])
   (:require-macros [cljs.core.async.macros :refer [go-loop]]))
 
-;(print (yaba/encode 0xfffff))
-;(print (yaba/encode 0xfffff))
-;(print (yaba/decode "vuxijageca"))
+; get profile from localstorage or create
+(defonce config (local-storage (reagent/atom (multiplayer/make-profile)) :config))
+(defonce wt (js/WebTorrent.))
+(defonce room (atom nil))
 
-;(print (yaba/encode (bit-and 0x00ed64c98 0x0000ffff)))
-;(print (yaba/encode (bit-shift-right 0x00ed64c98 16)))
+(defn send-chat-message [game-state room message]
+  (multiplayer/post @room {:type "chat"
+                           :from (@game-state :public-key)
+                           :message message}))
 
-;(print (+ (yaba/decode "lifica") (bit-shift-left (yaba/decode "zope") 16)))
-; 248925336
-; 0xed64c98
-
-(defn room-to-seed [r]
-  (let [[m l] (clojure.string/split r " ")]
-    (+ (yaba/decode m) (bit-shift-left (yaba/decode l) 16))))
-
-(defn seed-to-room [s]
-  (print "seed-to-room" s)
-  (str (yaba/encode (bit-and s 0x0000ffff)) " " (yaba/encode (bit-shift-right (bit-and s 0xffff0000) 16))))
-
-(print (seed-to-room 248925336))
+(defonce instance (atom 0))
+(defn listen-for-messages [room game-state]
+  (swap! instance inc)
+  (print "listen-for-messages entering loop:" @instance)
+  (let [my-instance @instance]
+    (go-loop []
+             (let [[action message] (<! (@room :chan))]
+               (println "Got a value in this loop:" action message)
+               (if (and (= action "message") (= (get message "type") "chat"))
+                 (swap! game-state update-in [:messages] conj message))
+               (if (and action (= my-instance @instance))
+                 (recur)
+                 (print "listen-for-messages exiting loop:" my-instance))))))
 
 (defn mount-root []
   (let [url-hash (.. js/document -location -hash)
-        url-hash (if (= url-hash "") "lifica zope" (.replace url-hash "#" ""))
-        dungeon-seed (room-to-seed url-hash)
-        app-element (.getElementById js/document "app")
-        game-state (reagent/atom {:window [0 0]})
-        clock (reagent/atom 0)
+        url-hash (if (= url-hash "") "astrogue" (.replace url-hash "#" ""))
+        dungeon-seed (dungeon-name-to-seed url-hash)
+        dungeon-hash (str "astrogue-room:" dungeon-seed)
         rng (js/ROT.RNG.setSeed dungeon-seed)
-        display (js/ROT.Display.)
-        [game-map boxes player npc] (build-map)
         dimensions [80 25]
-        handle-resize-event! (partial resize-screen! (reagent/cursor game-state [:window]) dimensions)
-        ;wt (js/WebTorrent.)
-        ;room (multiplayer/connect wt "room-one")
-        next-dungeon (.getUniformInt js/ROT.RNG 0 0xffffffff)
-        ]
+        
+        app-element (.getElementById js/document "app")
+        game-state (reagent/atom (make-game-state))
+        
+        clock (reagent/atom 0)
+        [game-map boxes player npc] (build-map)
+        handle-resize-event! (partial resize-screen! (reagent/cursor game-state [:window]) dimensions)]
     (print "dungeon-seeds" url-hash dungeon-seed)
-    (print "next" (seed-to-room next-dungeon) next-dungeon)
-    ;(def ROOM room)
-    ;(def WT wt)
+    (swap! game-state assoc :public-key (multiplayer/pk-from-secret (@config :secret-key)))
     (swap! game-state assoc :player player)
     (swap! game-state assoc :npc npc)
-    (comment (go-loop []
-             (let [x (<! (room :chan))]
-               (println "Got a value in this loop:" x)
-               (if x
-                 (recur)))))
+    (swap! room multiplayer/set-room wt dungeon-hash)
+    (listen-for-messages room game-state)
     (handle-resize-event!)
     (.addEventListener js/window "resize" handle-resize-event!)
     (js/setInterval (fn [] (reset! clock (.getTime (js/Date.)))) 100)
-    (reagent/render [component-renderer dimensions game-state game-map boxes clock] (.getElementById js/document "app"))
+    (reagent/render [component-renderer dimensions game-state game-map boxes clock config (partial send-chat-message game-state room)] (.getElementById js/document "app"))
     ;(set! (.-innerHTML app-element) "")
     ;(.appendChild app-element (.getContainer display))
-    (wait-for-win! display game-map boxes game-state)))
+    (wait-for-win! game-map boxes game-state)))
 
 (defn init! []
   (mount-root))

@@ -8,6 +8,7 @@
                  [org.clojure/clojurescript "1.9.854" :scope "provided"]
                  [org.clojure/core.async "0.3.443"]
                  ;[cljsjs/rot "0.6.0-0"]
+                 [alandipert/storage-atom "2.0.1"]
                  [reagent "0.7.0"]
                  [cljsjs/nacl-fast "1.0.0-rc.1-0"]]
 

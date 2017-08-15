@@ -1,5 +1,6 @@
 (ns astrogue.multiplayer
-  (:require [clojure.core.async :refer [put! close! chan]]))
+  (:require [clojure.core.async :refer [put! close! chan]]
+            [cljsjs.nacl-fast :as nacl]))
 
 (def EXT "xx_astrogue")
 
@@ -19,7 +20,7 @@
             (js/console.log message)
             (let [decoded (.decode js/Bencode (.toString message))]
               (js/console.log decoded)
-              (put! c ["message"  (js->clj decoded)]))))
+              (put! c ["message" (js->clj decoded)]))))
     t))
 
 (defn connect [wt channel-name]
@@ -37,13 +38,42 @@
                                  (fn []
                                    (put! c ["close" wire])
                                    (js/console.log "closed" (.-peerId wire))))))
-      {:torrent torrent :chan c})))
+      {:channel-name channel-name :torrent torrent :chan c})))
 
 (defn disconnect [wt channel-struct]
   (.remove wt (channel-struct :torrent))
   (close! (channel-struct :chan)))
 
-(defn post [channel-struct message]
-  (for [w  (.. (channel-struct :torrent) -wires)]
-    (.extended w EXT (clj->js message))))
+(defn set-room [old-channel-struct wt room-name]
+  (if (and old-channel-struct (= (old-channel-struct :channel-name) room-name))
+    (do
+      (print "Already in room:" room-name)
+      old-channel-struct)
+    (do
+      (when old-channel-struct
+        (print "Leaving room:" (old-channel-struct :channel-name))
+        (disconnect wt old-channel-struct))
+      (print "Joining room:" room-name)
+      (connect wt room-name))))
 
+(defn post [channel-struct message]
+  (let [uid (js/Array.from (nacl.randomBytes 32))
+        ; TODO: sign
+        message (assoc message "uid" uid)]
+    (js/console.log (.-wires (channel-struct :torrent)) (.. (channel-struct :torrent) -wires))
+    (put! (channel-struct :chan) ["message" (js->clj (clj->js message))])
+    (print "yes i am here" (.. (channel-struct :torrent) -wires))
+    (doseq [w (.. (channel-struct :torrent) -wires)]
+      (do
+        (print "sending to wire" (.-peerId w))
+        (.extended w EXT (clj->js message))))))
+
+(defn make-profile []
+  {:name ""
+   :secret-key (js/Array.from (.-secretKey (.keyPair nacl.sign)))})
+
+(defn keys-from-secret [secret]
+  (.fromSecretKey nacl.sign.keyPair (js/Uint8Array.from secret)))
+
+(defn pk-from-secret [secret]
+  (js/Array.from (.-publicKey (keys-from-secret secret))))
