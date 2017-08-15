@@ -16,10 +16,10 @@
               (js/console.log "Got wire" wire))))
     (set! (.. t -prototype -onMessage)
           (fn [message]
-            (js/console.log "Message")
-            (js/console.log message)
+            ;(js/console.log "Message")
+            ;(js/console.log message)
             (let [decoded (.decode js/Bencode (.toString message))]
-              (js/console.log decoded)
+              (js/console.log "Message:" decoded)
               (put! c ["message" (js->clj decoded)]))))
     t))
 
@@ -60,13 +60,9 @@
   (let [uid (js/Array.from (nacl.randomBytes 32))
         ; TODO: sign
         message (assoc message "uid" uid)]
-    (js/console.log (.-wires (channel-struct :torrent)) (.. (channel-struct :torrent) -wires))
     (put! (channel-struct :chan) ["message" (js->clj (clj->js message))])
-    (print "yes i am here" (.. (channel-struct :torrent) -wires))
     (doseq [w (.. (channel-struct :torrent) -wires)]
-      (do
-        (print "sending to wire" (.-peerId w))
-        (.extended w EXT (clj->js message))))))
+      (.extended w EXT (clj->js message)))))
 
 (defn make-profile []
   {:name ""
