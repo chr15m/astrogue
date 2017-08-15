@@ -4,27 +4,30 @@
   (let [scale (js/Math.min (/ (first r2) (first r1)) (/ (last r2) (last r1)))]
     (vec (map #(int (* % scale)) r1))))
 
-(defn hex [a]
-  (apply str (map #(.slice (str "0" (.toString (bit-and 0xff %) 16)) -2) (js/Array.from a))))
-
 (defn resize-screen! [c dimensions]
   (reset! c
           (rectangle-in-rectangle dimensions [(.-innerWidth js/window) (.-innerHeight js/window)])))
 
 (defn send-chat-message [db send-fn]
-  (send-fn (@db :message))
-  (swap! db dissoc :message))
+  (let [m (@db :message)]
+    (when m
+      (send-fn m)
+      (swap! db dissoc :message))))
+
+(defn hex [a]
+  (apply str (map #(.slice (str "0" (.toString (bit-and 0xff %) 16)) -2) (js/Array.from a))))
 
 (defn component-chat [db config message-cb]
   [:div#chat
    [:div#messages
-    (print (@db :messages))
     (for [m (@db :messages)]
       [:div {:key (hex (get m "uid"))} [:span.id (hex (subvec (get m "from") 0 4))] [:span.message (get m "message")]])]
-   [:input {:value (@db :message)
-            :placeholder "chat..."
-            :on-change #(swap! db assoc :message (-> % .-target .-value))}]
-   [:button {:on-click #(send-chat-message db message-cb)} "send"]])
+   [:div.ui
+    [:button {:on-click #(send-chat-message db message-cb)} "send"]   
+    [:input {:value (@db :message)
+             :placeholder "chat..."
+             :on-key-up #(if (= (-> % .-keyCode) 13) (send-chat-message db message-cb))
+             :on-change #(swap! db assoc :message (-> % .-target .-value))}]]])
 
 (defn component-user-config [config]
   [:div#config

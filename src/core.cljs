@@ -16,6 +16,7 @@
 (defn send-chat-message [game-state room message]
   (multiplayer/post @room {:type "chat"
                            :from (@game-state :public-key)
+                           :name (@config :name)
                            :message message}))
 
 (defonce instance (atom 0))
@@ -54,7 +55,7 @@
     (listen-for-messages room game-state)
     (handle-resize-event!)
     (.addEventListener js/window "resize" handle-resize-event!)
-    (js/setInterval (fn [] (reset! clock (.getTime (js/Date.)))) 100)
+    ;(js/setInterval (fn [] (reset! clock (.getTime (js/Date.)))) 100)
     (reagent/render [component-renderer dimensions game-state game-map boxes clock config (partial send-chat-message game-state room)] (.getElementById js/document "app"))
     ;(set! (.-innerHTML app-element) "")
     ;(.appendChild app-element (.getContainer display))
