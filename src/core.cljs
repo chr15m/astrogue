@@ -13,11 +13,12 @@
 (defonce wt (js/WebTorrent.))
 (defonce room (atom nil))
 
-(defn send-chat-message [game-state room message]
+(defn send-chat-message [config game-state room message]
   (multiplayer/post @room {:type "chat"
                            :from (@game-state :public-key)
                            :name (@config :name)
-                           :message message}))
+                           :message message}
+                    (@config :secret-key)))
 
 (defonce instance (atom 0))
 (defn listen-for-messages [room game-state]
@@ -27,7 +28,8 @@
     (go-loop []
              (let [[action message] (<! (@room :chan))]
                (println "Got a value in this loop:" action message)
-               (if (and (= action "message") (= (get message "type") "chat"))
+               (when (and (= action "message") (= (get message "type") "chat"))
+                 (print (get message "signature"))
                  (swap! game-state update-in [:messages] conj message))
                (if (and action (= my-instance @instance))
                  (recur)
@@ -56,7 +58,7 @@
     (handle-resize-event!)
     (.addEventListener js/window "resize" handle-resize-event!)
     ;(js/setInterval (fn [] (reset! clock (.getTime (js/Date.)))) 100)
-    (reagent/render [component-renderer dimensions game-state game-map boxes clock config (partial send-chat-message game-state room)] (.getElementById js/document "app"))
+    (reagent/render [component-renderer dimensions game-state game-map boxes clock config (partial send-chat-message config game-state room)] (.getElementById js/document "app"))
     ;(set! (.-innerHTML app-element) "")
     ;(.appendChild app-element (.getContainer display))
     (wait-for-win! game-map boxes game-state)))

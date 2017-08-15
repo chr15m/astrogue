@@ -20,6 +20,8 @@
             ;(js/console.log message)
             (let [decoded (.decode js/Bencode (.toString message))]
               (js/console.log "Message:" decoded)
+              ; TODO: verify sig before passing on
+              ; nacl.sign.detached.verify
               (put! c ["message" (js->clj decoded)]))))
     t))
 
@@ -56,10 +58,12 @@
       (print "Joining room:" room-name)
       (connect wt room-name))))
 
-(defn post [channel-struct message]
+(defn post [channel-struct message secret-key]
   (let [uid (js/Array.from (nacl.randomBytes 32))
-        ; TODO: sign
-        message (assoc message "uid" uid)]
+        message (assoc message "uid" uid)
+        bencoded-message (-> (js/TextEncoder. "utf8") (.encode (.encode js/Bencode message)))
+        signature (js/Array.from (nacl.sign.detached bencoded-message (js/Uint8Array.from secret-key)))
+        message (assoc message "sig" signature)]
     (put! (channel-struct :chan) ["message" (js->clj (clj->js message))])
     (doseq [w (.. (channel-struct :torrent) -wires)]
       (.extended w EXT (clj->js message)))))
