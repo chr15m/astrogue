@@ -9,28 +9,30 @@
 (defn string-to-uint8array [s]
   (.encode utf8encoder s))
 
+(defn receive-message [wire c message]
+  (let [decoded-js (.decode js/Bencode (.toString message))
+        decoded (js->clj decoded-js)
+        signature (js/Uint8Array.from (get decoded "sig"))
+        public-key (js/Uint8Array.from (get decoded "key"))
+        encoded-no-sig (.encode js/Bencode (clj->js (dissoc decoded "sig")))]
+    ; TODO: hash and discard if it is a duplicate message
+    (if (nacl.sign.detached.verify (string-to-uint8array encoded-no-sig) signature public-key)
+      ; nacl.sign.detached.verify(message, signature, publicKey)
+      (put! c ["message" decoded])
+      (print "Message signature check failed."))))
+
+(defn handle-handshake [wire handshake]
+  (js/console.log "Extended handshake" handshake)
+  (if (and (.-m handshake) (aget (.-m handshake) EXT))
+    (js/console.log "Got wire" wire)))
+
 (defn attach-extension-protocol [wire addr c]
   (let [t (fn [wire]
             (print "Created extension protocol."))]
     ; yuck javascript
     (set! (.. t -prototype -name) EXT)
-    (set! (.. t -prototype -onExtendedHandshake)
-          (fn [handshake]
-            (js/console.log "Extended handshake" handshake)
-            (if (and (.-m handshake) (aget (.-m handshake) EXT))
-              (js/console.log "Got wire" wire))))
-    (set! (.. t -prototype -onMessage)
-          (fn [message]
-            (let [decoded-js (.decode js/Bencode (.toString message))
-                  decoded (js->clj decoded-js)
-                  signature (js/Uint8Array.from (get decoded "sig"))
-                  public-key (js/Uint8Array.from (get decoded "key"))
-                  encoded-no-sig (.encode js/Bencode (clj->js (dissoc decoded "sig")))]
-              ; TODO: hash and discard if it is a duplicate message
-              (if (nacl.sign.detached.verify (string-to-uint8array encoded-no-sig) signature public-key)
-                ; nacl.sign.detached.verify(message, signature, publicKey)
-                (put! c ["message" decoded])
-                (print "Message signature check failed.")))))
+    (set! (.. t -prototype -onExtendedHandshake) (partial handle-handshake wire))
+    (set! (.. t -prototype -onMessage) (partial receive-message wire c))
     t))
 
 (defn connect [wt channel-name]
