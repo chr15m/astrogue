@@ -21,7 +21,7 @@
   [:div#chat
    [:div#messages
     (for [m (@db :messages)]
-      [:div {:key (hex (get m "uid"))} [:span.id (hex (subvec (get m "from") 0 4))] [:span.message (get m "message")]])]
+      [:div {:key (hex (get m "uid"))} [:span.id (hex (subvec (get m "key") 0 4))] [:span.message (get m "message")]] )]
    [:div.ui
     [:button {:on-click #(send-chat-message db message-cb)} "send"]   
     [:input {:value (@db :message)

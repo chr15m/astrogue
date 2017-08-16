@@ -4,6 +4,11 @@
 
 (def EXT "xx_astrogue")
 
+(defonce utf8encoder (js/TextEncoder. "utf8"))
+
+(defn string-to-uint8array [s]
+  (.encode utf8encoder s))
+
 (defn attach-extension-protocol [wire addr c]
   (let [t (fn [wire]
             (print "Created extension protocol."))]
@@ -16,13 +21,16 @@
               (js/console.log "Got wire" wire))))
     (set! (.. t -prototype -onMessage)
           (fn [message]
-            ;(js/console.log "Message")
-            ;(js/console.log message)
-            (let [decoded (.decode js/Bencode (.toString message))]
-              (js/console.log "Message:" decoded)
-              ; TODO: verify sig before passing on
-              ; nacl.sign.detached.verify
-              (put! c ["message" (js->clj decoded)]))))
+            (let [decoded-js (.decode js/Bencode (.toString message))
+                  decoded (js->clj decoded-js)
+                  signature (js/Uint8Array.from (get decoded "sig"))
+                  public-key (js/Uint8Array.from (get decoded "key"))
+                  encoded-no-sig (.encode js/Bencode (clj->js (dissoc decoded "sig")))]
+              ; TODO: hash and discard if it is a duplicate message
+              (if (nacl.sign.detached.verify (string-to-uint8array encoded-no-sig) signature public-key)
+                ; nacl.sign.detached.verify(message, signature, publicKey)
+                (put! c ["message" decoded])
+                (print "Message signature check failed.")))))
     t))
 
 (defn connect [wt channel-name]
@@ -61,12 +69,14 @@
 (defn post [channel-struct message secret-key]
   (let [uid (js/Array.from (nacl.randomBytes 32))
         message (assoc message "uid" uid)
-        bencoded-message (-> (js/TextEncoder. "utf8") (.encode (.encode js/Bencode message)))
-        signature (js/Array.from (nacl.sign.detached bencoded-message (js/Uint8Array.from secret-key)))
-        message (assoc message "sig" signature)]
-    (put! (channel-struct :chan) ["message" (js->clj (clj->js message))])
+        bencoded-message (.encode js/Bencode (clj->js message))
+        bencoded-message-array (string-to-uint8array bencoded-message)
+        signature (js/Array.from (nacl.sign.detached bencoded-message-array (js/Uint8Array.from secret-key)))
+        message (assoc message "sig" signature)
+        message-json (clj->js message)]
+    (put! (channel-struct :chan) ["message" (js->clj message-json)])
     (doseq [w (.. (channel-struct :torrent) -wires)]
-      (.extended w EXT (clj->js message)))))
+      (.extended w EXT message-json))))
 
 (defn make-profile []
   {:name ""

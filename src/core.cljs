@@ -15,7 +15,7 @@
 
 (defn send-chat-message [config game-state room message]
   (multiplayer/post @room {:type "chat"
-                           :from (@game-state :public-key)
+                           :key (@game-state :public-key)
                            :name (@config :name)
                            :message message}
                     (@config :secret-key)))
@@ -26,11 +26,11 @@
   (print "listen-for-messages entering loop:" @instance)
   (let [my-instance @instance]
     (go-loop []
-             (let [[action message] (<! (@room :chan))]
-               (println "Got a value in this loop:" action message)
-               (when (and (= action "message") (= (get message "type") "chat"))
-                 (print (get message "signature"))
-                 (swap! game-state update-in [:messages] conj message))
+             (let [[action message] (<! (@room :chan))
+                   message-clj (js->clj message)]
+               (println "Got a value in this loop:" action message-clj)
+               (when (and (= action "message") (= (get message-clj "type") "chat"))
+                 (swap! game-state update-in [:messages] conj message-clj))
                (if (and action (= my-instance @instance))
                  (recur)
                  (print "listen-for-messages exiting loop:" my-instance))))))
