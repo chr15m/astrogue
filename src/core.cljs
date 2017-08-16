@@ -1,6 +1,6 @@
 (ns astrogue.core
   (:require [reagent.core :as reagent]
-            [clojure.core.async :refer [<!]]
+            [clojure.core.async :refer [<! put!]]
             [alandipert.storage-atom :refer [local-storage]]
             [astrogue.engine :refer [build-map make-game-state wait-for-win!]]
             [astrogue.renderer :refer [component-renderer resize-screen!]]
@@ -24,6 +24,8 @@
 (defn listen-for-messages [room game-state]
   (swap! instance inc)
   (print "listen-for-messages entering loop:" @instance)
+  (if @room
+    (put! (@room :chan) ["exit-check" @instance]))
   (let [my-instance @instance]
     (go-loop []
              (let [[action message] (<! (@room :chan))
